@@ -1,0 +1,234 @@
+let currentUser = null;
+let isAdmin = false;
+let adminMeetingCode = "Nour";
+let userMeetingCode = localStorage.getItem("userMeetingCode") || "Guest123";
+let chatMessages = JSON.parse(localStorage.getItem("chatMessages")) || [];
+let attendees = JSON.parse(localStorage.getItem("attendees")) || [];
+let speakRequests = [];
+
+document.getElementById("current-user-meeting-code").textContent = userMeetingCode;
+
+function login() {
+  const username = document.getElementById("username").value.trim();
+  const code = document.getElementById("meeting-code").value.trim();
+
+  if (!username || !code) {
+    alert("يرجى إدخال اسم المستخدم وكود الاجتماع");
+    return;
+  }
+
+  if (code === adminMeetingCode) {
+    currentUser = username;
+    isAdmin = true;
+    showAdminPanel();
+    updateAttendeesList(currentUser);
+  } else if (code === userMeetingCode) {
+    currentUser = username;
+    showUserPanel();
+    updateAttendeesList(currentUser);
+  } else {
+    alert("كود الاجتماع غير صحيح");
+  }
+}
+
+function showAdminPanel() {
+  const loginScreen = document.getElementById("login-screen");
+  const adminPanel = document.getElementById("admin-panel");
+
+  if (loginScreen && adminPanel) {
+    loginScreen.classList.add("hidden");
+    adminPanel.classList.remove("hidden");
+    document.getElementById("admin-name").textContent = currentUser;
+    document.getElementById("admin-name-user").textContent = currentUser;
+    updateChatBox();
+  }
+}
+
+function showUserPanel() {
+  const loginScreen = document.getElementById("login-screen");
+  const userPanel = document.getElementById("user-panel");
+
+  if (loginScreen && userPanel) {
+    loginScreen.classList.add("hidden");
+    userPanel.classList.remove("hidden");
+    document.getElementById("admin-name-user").textContent = "جارٍ التحميل...";
+    updateChatBox();
+  }
+}
+
+function updateAttendeesList(username) {
+  const existingAttendee = attendees.find(attendee => attendee.name === username);
+  if (!existingAttendee) {
+    attendees.push({ name: username, time: new Date().toLocaleTimeString(), active: true });
+    localStorage.setItem("attendees", JSON.stringify(attendees));
+    renderAttendeesList();
+  }
+}
+
+function renderAttendeesList() {
+  const list = document.getElementById("attendees-list");
+  list.innerHTML = attendees
+    .map(
+      attendee =>
+        `<li>${attendee.name} (${attendee.time}) ${
+          attendee.active ? '<span class="attendee-dot green"></span>' : '<span class="attendee-dot red"></span>'
+        }</li>`
+    )
+    .join("");
+}
+
+function sendMessage(sender) {
+  const messageInput = document.getElementById(`${sender}-message`);
+  const message = messageInput.value.trim();
+  if (!message) return;
+
+  const newMessage = `${currentUser}: ${message}`;
+  chatMessages.push(newMessage);
+  localStorage.setItem("chatMessages", JSON.stringify(chatMessages));
+  updateChatBox();
+  messageInput.value = "";
+}
+
+function updateChatBox() {
+  const adminChatBox = document.getElementById("chat-box");
+  const userChatBox = document.getElementById("user-chat-box");
+  const messagesHTML = chatMessages.map(msg => `<p>${msg}</p>`).join("");
+  if (adminChatBox) adminChatBox.innerHTML = messagesHTML;
+  if (userChatBox) userChatBox.innerHTML = messagesHTML;
+}
+
+function clearChat() {
+  chatMessages = [];
+  localStorage.removeItem("chatMessages");
+  updateChatBox();
+  alert("تم مسح جميع الرسائل");
+}
+
+function changeUserMeetingCode() {
+  const newCode = document.getElementById("new-meeting-code").value.trim();
+  if (newCode) {
+    userMeetingCode = newCode;
+    localStorage.setItem("userMeetingCode", userMeetingCode);
+    document.getElementById("current-user-meeting-code").textContent = userMeetingCode;
+    alert("تم تغيير كود المستخدمين بنجاح");
+  } else {
+    alert("يرجى إدخال كود جديد");
+  }
+}
+
+function clearAttendees() {
+  attendees = [];
+  localStorage.removeItem("attendees");
+  renderAttendeesList();
+  alert("تم مسح قائمة الحضور بالكامل");
+}
+
+function leaveMeeting() {
+  const user = attendees.find(attendee => attendee.name === currentUser);
+  if (user) {
+    user.active = false;
+    localStorage.setItem("attendees", JSON.stringify(attendees));
+    renderAttendeesList();
+  }
+  resetApp();
+}
+
+function endMeeting() {
+  alert("تم إنهاء الاجتماع، وسيتم طرد الجميع إلى صفحة تسجيل الدخول");
+  resetApp();
+}
+
+function resetApp() {
+  currentUser = null;
+  isAdmin = false;
+
+  document.getElementById("admin-panel").classList.add("hidden");
+  document.getElementById("user-panel").classList.add("hidden");
+  document.getElementById("login-screen").classList.remove("hidden");
+
+  document.getElementById("admin-name").textContent = "غير محدد";
+  document.getElementById("admin-name-user").textContent = "غير محدد";
+
+  const sidebar = document.getElementById("admin-sidebar");
+  if (sidebar.classList.contains("open")) {
+    sidebar.classList.remove("open");
+  }
+}
+
+function requestToSpeak() {
+  if (!isAdmin) {
+    alert("تم إرسال طلب التحدث");
+    speakRequests.push(currentUser);
+    renderSpeakRequests();
+  }
+}
+
+function renderSpeakRequests() {
+  const requestsList = document.getElementById("speak-requests");
+  requestsList.innerHTML = speakRequests
+    .map(
+      user =>
+        `<li>${user} 
+          <button onclick="allowSpeaking('${user}')">السماح</button>
+          <button onclick="denySpeaking('${user}')">الرفض</button>
+        </li>`
+    )
+    .join("");
+}
+
+function allowSpeaking(user) {
+  const userIndex = speakRequests.indexOf(user);
+  if (userIndex !== -1) {
+    speakRequests.splice(userIndex, 1);
+    document.getElementById("user-message").disabled = false;
+    alert(`تم السماح للمستخدم ${user} بالتحدث`);
+    renderSpeakRequests();
+  }
+}
+
+function denySpeaking(user) {
+  const userIndex = speakRequests.indexOf(user);
+  if (userIndex !== -1) {
+    speakRequests.splice(userIndex, 1);
+    alert(`تم رفض طلب المستخدم ${user}`);
+    renderSpeakRequests();
+  }
+}
+
+// السحب الجانبي + ميزة الجر
+document.addEventListener("DOMContentLoaded", function () {
+  const sidebar = document.getElementById("admin-sidebar");
+  const toggleBtn = document.getElementById("toggle-sidebar-btn");
+  const dragHandle = document.querySelector(".drag-handle");
+  const scrollableContent = document.querySelector(".scrollable-content");
+
+  // السحب بالزر
+  if (toggleBtn && sidebar) {
+    toggleBtn.addEventListener("click", function () {
+      console.log("تم الضغط على زر السحب الجانبي"); // تصحيح [[Debugging]]
+      sidebar.classList.toggle("open");
+    });
+  }
+
+  // ميزة الجر لتحريك محتوى القائمة لأعلى ولأسفل
+  if (dragHandle && scrollableContent) {
+    let isDragging = false;
+    let startY, startScrollTop;
+
+    dragHandle.addEventListener("mousedown", function (e) {
+      isDragging = true;
+      startY = e.clientY;
+      startScrollTop = scrollableContent.scrollTop;
+    });
+
+    document.addEventListener("mousemove", function (e) {
+      if (!isDragging) return;
+      const deltaY = e.clientY - startY;
+      scrollableContent.scrollTop = startScrollTop - deltaY;
+    });
+
+    document.addEventListener("mouseup", function () {
+      isDragging = false;
+    });
+  }
+});
