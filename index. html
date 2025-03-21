@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مشروع الدردشة</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- شاشة تسجيل الدخول -->
+  <div id="login-screen">
+    <h1>تسجيل الدخول</h1>
+    <input type="text" id="username" placeholder="اسم المستخدم">
+    <input type="text" id="meeting-code" placeholder="كود الاجتماع">
+    <button onclick="login()">دخول</button>
+    <p>كود المستخدمين الحالي: <span id="current-user-meeting-code"></span></p>
+  </div>
+
+  <!-- لوحة الإدارة -->
+  <div id="admin-panel" class="hidden">
+    <h1>مرحبًا بك يا <span id="admin-name">غير محدد</span></h1>
+    <button id="toggle-sidebar-btn">فتح القائمة</button>
+    <div id="admin-sidebar" class="sidebar">
+      <div class="scrollable-content">
+        <h2>قائمة الحضور</h2>
+        <ul id="attendees-list"></ul>
+        <h2>طلبات التحدث</h2>
+        <ul id="speak-requests"></ul>
+      </div>
+    </div>
+    <div class="drag-handle"></div>
+    <div class="chat-container">
+      <div id="chat-box" class="chat-box"></div>
+      <input type="text" id="admin-message" placeholder="اكتب رسالة...">
+      <button onclick="sendMessage('admin')">إرسال</button>
+    </div>
+    <button onclick="clearChat()">مسح المحادثة</button>
+    <button onclick="clearAttendees()">مسح قائمة الحضور</button>
+    <button onclick="endMeeting()">إنهاء الاجتماع</button>
+    <input type="text" id="new-meeting-code" placeholder="كود جديد">
+    <button onclick="changeUserMeetingCode()">تغيير كود المستخدمين</button>
+  </div>
+
+  <!-- لوحة المستخدم -->
+  <div id="user-panel" class="hidden">
+    <h1>مرحبًا بك يا <span id="admin-name-user">غير محدد</span></h1>
+    <div class="chat-container user-chat-container">
+      <div id="user-chat-box" class="chat-box"></div>
+      <input type="text" id="user-message" placeholder="اكتب رسالة..." disabled>
+      <button onclick="sendMessage('user')">إرسال</button>
+    </div>
+    <button onclick="requestToSpeak()">طلب التحدث</button>
+    <button onclick="leaveMeeting()">مغادرة الاجتماع</button>
+  </div>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
